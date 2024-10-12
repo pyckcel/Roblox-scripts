@@ -9,7 +9,7 @@
 
 pcall(function()
     if not game['Loaded'] then game['Loaded']:Wait() end; repeat wait(.06) until game:GetService('Players').LocalPlayer ~= nil
-    local YourLang = "en" -- Language code that the messages are going to be translated to
+    local YourLang = "pt" -- Language code that the messages are going to be translated to
     
     local googlev = isfile'googlev.txt' and readfile'googlev.txt' or ''
     
