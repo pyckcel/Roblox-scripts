@@ -1,14 +1,27 @@
-local cpos = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+local player = game.Players.LocalPlayer
+local character = player.Character
+local humanoidRootPart = character.HumanoidRootPart
+local cpos = humanoidRootPart.CFrame
 
-local stuff = workspace:getDescendants()
-for i=1,#stuff do
-if stuff[i].Name == "Block" and stuff[i].Parent.Name == "Ores" then
-repeat
-wait()
-game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = stuff[i].CFrame
-game.Players.LocalPlayer.Character.Axe.RemoteEvent:FireServer(stuff[i])
-until stuff[i].Name ~= "Block" or not game.Players.LocalPlayer.Character:findFirstChild("Axe")
-end
+local function hasAxeEquipped()
+    return character:FindFirstChild("Axe")
 end
 
-game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cpos
+while not hasAxeEquipped() do
+    wait(1)
+end
+
+cpos = humanoidRootPart.CFrame
+
+local stuff = workspace:GetDescendants()
+for i = 1, #stuff do
+    if stuff[i].Name == "Block" and stuff[i].Parent.Name == "Ores" then
+        repeat
+            wait()
+            humanoidRootPart.CFrame = stuff[i].CFrame
+            character.Axe.RemoteEvent:FireServer(stuff[i])
+        until stuff[i].Name ~= "Block" or not hasAxeEquipped()
+    end
+end
+
+humanoidRootPart.CFrame = cpos
