@@ -1,21 +1,29 @@
 --[[
     Message Translator
-    Made by Aim, updated by cli, Updated by rang#1234
+    Made by Aim, updated by evn
     Credits to Riptxde for the sending chathook
 --]]
 
--- if you want loadstring: loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/x114/RobloxScripts/main/UpdatedChatTranslator"))()
+if not game['Loaded'] then game['Loaded']:Wait() end; repeat wait(.06) until game:GetService('Players').LocalPlayer ~= nil
+local YourLang = "en" -- Language code that the messages are going to be translated to
 
+local googlev = isfile'googlev.txt' and readfile'googlev.txt' or ''
+local request = request or syn.request
 
-pcall(function()
-    if not game['Loaded'] then game['Loaded']:Wait() end; repeat wait(.06) until game:GetService('Players').LocalPlayer ~= nil
-    local YourLang = "pt" -- Language code that the messages are going to be translated to
-    
-    local googlev = isfile'googlev.txt' and readfile'googlev.txt' or ''
-    
-    function googleConsent(Body)
+local function outputHook(fnc)
+    return function(...)
+        return fnc('[INLINE TRANSLATOR]', ...)
+    end
+end
+
+local print,warn = outputHook(print), outputHook(warn)
+
+-- // GOOGLE TRANSLATE // --
+
+local translate, getISOCode do
+    function googleConsent(Body) -- Because google really said: "Fuck you."
         local args = {}
-    
+
         for match in Body:gmatch('<input type="hidden" name=".-" value=".-">') do
             local k,v = match:match('<input type="hidden" name="(.-)" value="(.-)">')
             args[k] = v
@@ -23,11 +31,11 @@ pcall(function()
         googlev = args.v
         writefile('googlev.txt', args.v)
     end
-    
+
     local function got(url, Method, Body) -- Basic version of https://www.npmjs.com/package/got using synapse's request API for google websites
         Method = Method or "GET"
         
-        local res = syn.request({
+        local res = request({
             Url = url,
             Method = Method,
             Headers = {cookie="CONSENT=YES+"..googlev},
@@ -37,7 +45,7 @@ pcall(function()
         if res.Body:match('https://consent.google.com/s') then
             print('consent')
             googleConsent(res.Body)
-            res = syn.request({
+            res = request({
                 Url = url,
                 Method = "GET",
                 Headers = {cookie="CONSENT=YES+"..googlev}
@@ -46,7 +54,7 @@ pcall(function()
         
         return res
     end
-    
+
     local languages = {
         auto = "Automatic",
         af = "Afrikaans",
@@ -154,7 +162,7 @@ pcall(function()
         yo = "Yoruba",
         zu = "Zulu"
     };
-    
+
     function find(lang)
         for i,v in pairs(languages) do
             if i == lang or v == lang then
@@ -162,17 +170,17 @@ pcall(function()
             end
         end
     end
-    
+
     function isSupported(lang)
         local key = find(lang)
         return key and true or false 
     end
-    
+
     function getISOCode(lang)
         local key = find(lang)
         return key
     end
-    
+
     function stringifyQuery(dataFields)
         local data = ""
         for k, v in pairs(dataFields) do
@@ -193,20 +201,20 @@ pcall(function()
         data = data:sub(2)
         return data
     end
-    
+
     local reqid = math.random(1000,9999)
     local rpcidsTranslate = "MkEWBc"
     local rootURL = "https://translate.google.com/"
     local executeURL = "https://translate.google.com/_/TranslateWebserverUi/data/batchexecute"
     local fsid, bl
-    
+
     do -- init
-    	print('initialize')
+        print('initialize')
         local InitialReq = got(rootURL)
         fsid = InitialReq.Body:match('"FdrFJe":"(.-)"')
         bl = InitialReq.Body:match('"cfb2h":"(.-)"')
     end
-    
+
     local HttpService = game:GetService("HttpService")
     function jsonE(o)
         return HttpService:JSONEncode(o)
@@ -214,14 +222,14 @@ pcall(function()
     function jsonD(o)
         return HttpService:JSONDecode(o)
     end
-    
+
     function translate(str, to, from)
-        reqid = reqid + 10000
+        reqid+=10000
         from = from and getISOCode(from) or 'auto'
         to = to and getISOCode(to) or 'en'
-    
+
         local data = {{str, from, to, true}, {nil}}
-    
+
         local freq = {
             {
                 {
@@ -232,12 +240,12 @@ pcall(function()
                 }
             }
         }
-    
+
         local url = executeURL..'?'..stringifyQuery{rpcids = rpcidsTranslate, ['f.sid'] = fsid, bl = bl, hl="en", _reqid = reqid-10000, rt = 'c'}
         local body = stringifyQuery{['f.req'] = jsonE(freq)}
         
         local req = got(url, "POST", body)
-    	
+        
         local body = jsonD(req.Body:match'%[.-%]\n')
         local translationData = jsonD(body[1][3])
         local result = {
@@ -253,131 +261,181 @@ pcall(function()
         
         result.from.language = translationData[3]
         result.from.text = translationData[2][5][1]
-    
+
         return result
     end
-    
-    local Players = game:GetService("Players")
-    local LP = Players.LocalPlayer
-    local StarterGui = game:GetService('StarterGui')
-    for i=1, 15 do
-        local r = pcall(StarterGui["SetCore"])
-        if r then break end
-        game:GetService('RunService').RenderStepped:wait()
-    end
-    wait()
-    
-    local properties = {
-        Color = Color3.new(1,1,0);
-        Font = Enum.Font.SourceSansItalic;
-        TextSize = 16;
+end
+
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+local StarterGui = game:GetService('StarterGui')
+for i=1, 15 do
+    local r = pcall(StarterGui["SetCore"])
+    if r then break end
+    game:GetService('RunService').RenderStepped:wait()
+end
+wait()
+
+local properties = {
+    Color = Color3.new(1,1,0);
+    Font = Enum.Font.SourceSansItalic;
+    TextSize = 16;
+}
+
+game:GetService("StarterGui"):SetCore("SendNotification",
+    {
+        Title = "Chat Translator",
+        Text = "Ported to Google Translate",
+        Duration = 3
     }
-    
-    game:GetService("StarterGui"):SetCore("SendNotification",
-        {
-            Title = "Chat Translator",
-            Text = "Ported to Google Translate",
-            Duration = 3
-        }
-    )
-                      
-    properties.Text = "[TR] To send messages in a language, say > followed by the target language/language code, e.g.: >ru or >russian. To disable (go back to original language), say >d."
-    StarterGui:SetCore("ChatMakeSystemMessage", properties)
-    
-    function translateFrom(message)
-        local translation = translate(message, YourLang)
-    
-        local text
-        if translation.from.language ~= YourLang then 
-            text = translation.text
-        end
-    
-        return {text, translation.from.language}
+)
+                  
+properties.Text = "[TR] To send messages in a language, say > followed by the target language/language code, e.g.: >ru or >russian. To disable (go back to original language), say >d."
+StarterGui:SetCore("ChatMakeSystemMessage", properties)
+
+function translateFrom(message)
+    local translation = translate(message, YourLang)
+
+    local text
+    if translation.from.language ~= YourLang then 
+        text = translation.text
     end
-    
+
+    return {text, translation.from.language}
+end
+
+-- // CHAT FUNCTIONS // --
+
+local CBar, Connected = LP['PlayerGui']:WaitForChild('Chat')['Frame'].ChatBarParentFrame['Frame'].BoxFrame['Frame'].ChatBar, {}
+local EventFolder = game:GetService('ReplicatedStorage'):WaitForChild('DefaultChatSystemChatEvents')
+local Chat do
+    function Chat(Original, msg, Channel)
+        CBar.Text = msg
+        for i,v in pairs(getconnections(CBar.FocusLost)) do
+            v:Fire(true, nil, true)
+        end
+    end
+
+    --[[
+    local ChatMain = LP.PlayerScripts:FindFirstChild('ChatMain', true)
+    local MessageSender if ChatMain then
+        MessageSender = require(ChatMain.MessageSender)
+        ChatMain = require(ChatMain)
+    end
+
+    function Chat(Original, msg, Channel)
+        Channel = Channel or "All"
+        if MessageSender and ChatMain then
+            ChatMain.MessagePosted:fire(Original)
+            MessageSender:SendMessage(msg, Channel)
+        else
+            if not _G.SecureChat then
+                game:GetService('Players'):Chat(Original); 
+            end
+            EventFolder.SayMessageRequest:FireServer(msg, Channel)
+        end
+    end]]
+end
+
+do -- :Chatted replacement!!
     function get(plr, msg)
+        print(msg)
         local tab = translateFrom(msg)
         local translation = tab[1]
+        print(translation)
         if translation then
-            properties.Text = "("..tab[2]:upper()..") ".."[".. plr.Name .."]: "..translation
+            properties.Text = "("..tab[2]:upper()..") ".."[".. plr .."]: "..translation
             StarterGui:SetCore("ChatMakeSystemMessage", properties)
         end
     end
-    
-    game.ReplicatedStorage.DefaultChatSystemChatEvents.OnMessageDoneFiltering.OnClientEvent:Connect(function(messageData) 
-        get(game:GetService("Players")[messageData.FromSpeaker],messageData.Message)
-    end)
-    
-    local sendEnabled = false
-    local target = ""
-    
-    function translateTo(message, target)
-        target = target:lower() 
-        local translation = translate(message, target, "auto")
-    
-        return translation.text
-    end
-    
-    function disableSend()
-        sendEnabled = false
-        properties.Text = "[TR] Sending Disabled"
-        StarterGui:SetCore("ChatMakeSystemMessage", properties)
-    end
-    
-    local CBar, CRemote, Connected = LP['PlayerGui']:WaitForChild('Chat')['Frame'].ChatBarParentFrame['Frame'].BoxFrame['Frame'].ChatBar, game:GetService('ReplicatedStorage').DefaultChatSystemChatEvents['SayMessageRequest'], {}
-    
-    local HookChat = function(Bar)
-        coroutine.wrap(function()
-            if not table.find(Connected,Bar) then
-                local Connect = Bar['FocusLost']:Connect(function(Enter)
-                    if Enter ~= false and Bar['Text'] ~= '' then
-                        local Message = Bar['Text']
-                        Bar['Text'] = '';
-                        if Message == ">d" then
-                            disableSend()
-                        elseif Message:sub(1,1) == ">" and not Message:find(" ") then
-                            if getISOCode(Message:sub(2)) then
-                                sendEnabled = true
-                                target = Message:sub(2)
-                            else
-                                properties.Text = "[TR] Invalid language"
-                                StarterGui:SetCore("ChatMakeSystemMessage", properties)
-                            end
-                        elseif sendEnabled then
-                            Message = translateTo(Message, target)
-                            if not _G.SecureChat then
-                                game:GetService('Players'):Chat(Message); 
-                            end
-                            CRemote:FireServer(Message,'All')
-                        else
-                            if not _G.SecureChat then
-                                game:GetService('Players'):Chat(Message); 
-                            end
-                            CRemote:FireServer(Message,'All')
-                        end
-                    end
-                end)
-                Connected[#Connected+1] = Bar; Bar['AncestryChanged']:Wait(); Connect:Disconnect()
-            end
-        end)()
-    end
-    
-    HookChat(CBar); local BindHook = Instance.new('BindableEvent')
-    
-    local MT = getrawmetatable(game); local NC = MT.__namecall; setreadonly(MT, false)
-    
-    MT.__namecall = newcclosure(function(...)
-        local Method, Args = getnamecallmethod(), {...}
-        if rawequal(tostring(Args[1]),'ChatBarFocusChanged') and rawequal(Args[2],true) then 
-            if LP['PlayerGui']:FindFirstChild('Chat') then
-                BindHook:Fire()
-            end
+
+    EventFolder:WaitForChild("OnMessageDoneFiltering").OnClientEvent:Connect(function(data)
+        if data == nil then return end
+
+        local plr = Players:FindFirstChild(data.FromSpeaker)
+        local msg = tostring(data.Message)
+        local originalchannel = tostring(data.OriginalChannel)
+
+        if plr then 
+            plr = plr.DisplayName 
+        else 
+            plr = tostring(data.FromSpeaker)
         end
-        return NC(...)
+
+        if originalchannel:find("To ") then
+            plr = plr..originalchannel
+        end
+
+        get(plr, msg)
     end)
-    
-    BindHook['Event']:Connect(function()
-        CBar = LP['PlayerGui'].Chat['Frame'].ChatBarParentFrame['Frame'].BoxFrame['Frame'].ChatBar
-        HookChat(CBar)
-    end)
+end
+
+local sendEnabled = false
+local target = ""
+
+function translateTo(message, target)
+    target = target:lower() 
+    local translation = translate(message, target, "auto")
+
+    return translation.text
+end
+
+function disableSend()
+    sendEnabled = false
+    properties.Text = "[TR] Sending Disabled"
+    StarterGui:SetCore("ChatMakeSystemMessage", properties)
+end
+
+
+local HookChat = function(Bar)
+    coroutine.wrap(function()
+        if not table.find(Connected,Bar) then
+            local Connect = Bar['FocusLost']:Connect(function(Enter, _, ignore)
+                if ignore then return end
+                if Enter ~= false and Bar.Text ~= '' then
+                    local Message = Bar.Text
+                    Bar.Text = ''
+                    if Message == ">d" then
+                        disableSend()
+                    elseif Message:sub(1,1) == ">" and not Message:find(" ") then
+                        if getISOCode(Message:sub(2)) then
+                            sendEnabled = true
+                            target = Message:sub(2)
+                        else
+                            properties.Text = "[TR] Invalid language"
+                            StarterGui:SetCore("ChatMakeSystemMessage", properties)
+                        end
+                    elseif sendEnabled and not (Message:sub(1,3) == "/e " or Message:sub(1,7) == "/emote ") then
+                        local og = Message
+                        Message = translateTo(Message, target)
+                        --Bar.Text = Message
+                        Chat(og, Message)
+                    else
+                        --Bar.Text = Message
+                        Chat(Message, Message)
+                    end
+                end
+            end)
+            Connected[#Connected+1] = Bar; Bar['AncestryChanged']:Wait(); Connect:Disconnect()
+        end
+    end)()
+end
+
+HookChat(CBar); local BindHook = Instance.new('BindableEvent')
+
+local MT = getrawmetatable(game); local NC = MT.__namecall; setreadonly(MT, false)
+
+MT.__namecall = newcclosure(function(...)
+    local Method, Args = getnamecallmethod(), {...}
+    if rawequal(tostring(Args[1]),'ChatBarFocusChanged') and rawequal(Args[2],true) then 
+        if LP['PlayerGui']:FindFirstChild('Chat') then
+            BindHook:Fire()
+        end
+    end
+    return NC(...)
+end)
+
+BindHook['Event']:Connect(function()
+    CBar = LP['PlayerGui'].Chat['Frame'].ChatBarParentFrame['Frame'].BoxFrame['Frame'].ChatBar
+    HookChat(CBar)
 end)
