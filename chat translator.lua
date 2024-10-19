@@ -5,7 +5,7 @@
 --]]
 
 if not game['Loaded'] then game['Loaded']:Wait() end; repeat wait(.06) until game:GetService('Players').LocalPlayer ~= nil
-local YourLang = "en" -- Language code that the messages are going to be translated to
+local YourLang = "pt" -- Language code that the messages are going to be translated to
 
 local googlev = isfile'googlev.txt' and readfile'googlev.txt' or ''
 local request = request or syn.request
@@ -21,7 +21,7 @@ local print,warn = outputHook(print), outputHook(warn)
 -- // GOOGLE TRANSLATE // --
 
 local translate, getISOCode do
-    function googleConsent(Body) -- Because google really said: "Fuck you."
+    function googleConsent(Body)
         local args = {}
 
         for match in Body:gmatch('<input type="hidden" name=".-" value=".-">') do
