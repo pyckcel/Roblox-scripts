@@ -11,7 +11,7 @@ local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local detectionRange = 25 -- detection range
 
 while getgenv().script do
-    wait(0.1)
+    wait(0.6)
     for _, item in pairs(workspace:GetDescendants()) do
         if item:IsA("Part") and item.Name == "Block" then
             local distance = (humanoidRootPart.Position - item.Position).magnitude
